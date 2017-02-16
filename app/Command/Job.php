@@ -84,7 +84,7 @@ class Job
         system("rm -rf /tmp/ssmodbackup", $ret);
         system("rm /tmp/ssmodbackup.zip", $ret);
 
-        Telegram::Send("备份完毕了喵~今天又是安全祥和的一天呢。");
+        Telegram::Send("成功完成了今天的备份。");
     }
 
     public static function SyncDuoshuo()
@@ -135,11 +135,11 @@ class Job
             }
         }
 
-        NodeInfoLog::where("log_time", "<", time()-86400*3)->delete();
-        NodeOnlineLog::where("log_time", "<", time()-86400*3)->delete();
-        TrafficLog::where("log_time", "<", time()-86400*3)->delete();
-        DetectLog::where("datetime", "<", time()-86400*3)->delete();
-        Telegram::Send("姐姐姐姐，数据库被清理了，感觉身体被掏空了呢~");
+        NodeInfoLog::where("log_time", "<", time()-86400*14)->delete();
+        NodeOnlineLog::where("log_time", "<", time()-86400*14)->delete();
+        TrafficLog::where("log_time", "<", time()-86400*14)->delete();
+        DetectLog::where("datetime", "<", time()-86400*14)->delete();
+        Telegram::Send("清理了数据库。");
 
 
         $users = User::all();
@@ -399,7 +399,7 @@ class Job
                         }
                     }
 
-                    Telegram::Send("姐姐姐姐，面板程序有更新了呢~看看你的邮箱吧~");
+                    Telegram::Send("面板程序有更新了。");
 
                     $myfile = fopen(BASE_PATH."/storage/update.md5", "w+") or die("Unable to open file!");
                     $txt = "1";
@@ -466,7 +466,7 @@ class Job
                                 }
                             }
                         } else {
-                            $notice_text = "喵喵喵~ ".$node->name." 节点掉线了喵~";
+                            $notice_text = $node->name." 掉线了，请暂时切换到其他节点。";
                         }
                     }
 
@@ -525,7 +525,7 @@ class Job
 
                             $notice_text = "喵喵喵~ ".$node->name." 节点恢复了喵~域名解析被切换回来了喵~";
                         } else {
-                            $notice_text = "喵喵喵~ ".$node->name." 节点恢复了喵~";
+                            $notice_text = $node->name." 恢复了。";
                         }
                     }
 
@@ -695,10 +695,13 @@ class Job
                     $user->u = 0;
                     $user->d = 0;
                     $user->last_day_t = 0;
+                    $user->auto_reset_day = 0;
+                    $user->auto_reset_bandwidth = 0.00;
+                    $user->node_connector = 0;
 
                     $subject = Config::get('appName')."-您的用户等级已经过期了";
                     $to = $user->email;
-                    $text = "您好，系统发现您的账号等级已经过期了。流量已经被重置为".Config::get('enable_class_expire_reset_traffic').'GB' ;
+                    $text = "您好，系统发现您的账号等级已经过期了。流量已经被重置为 ".Config::get('enable_class_expire_reset_traffic').' GB' ;
                     try {
                         Mail::send($to, $subject, 'news/warn.tpl', [
                             "user" => $user,"text" => $text

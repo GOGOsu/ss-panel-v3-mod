@@ -278,7 +278,7 @@ class UserController extends BaseController
         $codeq=Code::where("code", "=", $code)->where("isused", "=", 0)->first();
         if ($codeq == null) {
             $res['ret'] = 0;
-            $res['msg'] = "此充值码错误";
+            $res['msg'] = "此充值码不存在或已被使用。";
             return $response->getBody()->write(json_encode($res));
         }
 
@@ -322,15 +322,24 @@ class UserController extends BaseController
         if ($codeq->type==10001) {
             $user->transfer_enable=$user->transfer_enable+$codeq->number*1024*1024*1024;
             $user->save();
+            $res['ret'] = 1;
+            $res['msg'] = "充值成功，充值了 ".$codeq->number." GB 流量。";
+
         }
 
         if ($codeq->type==10002) {
-            if (time()>strtotime($user->expire_in)) {
-                $user->expire_in=date("Y-m-d H:i:s", time()+$codeq->number*86400);
+            if ( ($user->class > -1) or (time()>strtotime($user->class_expire)) )
+                $user->class=-1;
+                $user->auto_reset_bandwidth = 200.00;
+                $user->node_connector = 2;
+                $user->auto_reset_day=((date("d")>28)?28:(date("d")));
+                $user->class_expire=date("Y-m-d H:i:s", time()+$codeq->number*86400*30.438);
             } else {
-                $user->expire_in=date("Y-m-d H:i:s", strtotime($user->expire_in)+$codeq->number*86400);
+                $user->class_expire=date("Y-m-d H:i:s", strtotime($user->class_expire)+$codeq->number*86400*30.438);
             }
             $user->save();
+            $res['ret'] = 1;
+            $res['msg'] = "充值成功，充值了 ".$codeq->number." 个月。";
         }
 
         if ($codeq->type>=1&&$codeq->type<=10000) {
@@ -356,7 +365,7 @@ class UserController extends BaseController
 
         if ($code == "") {
             $res['ret'] = 0;
-            $res['msg'] = "悟空别闹";
+            $res['msg'] = "啥？";
             return $response->getBody()->write(json_encode($res));
         }
 
@@ -396,7 +405,7 @@ class UserController extends BaseController
         $res['msg'] = "设置成功";
         return $response->getBody()->write(json_encode($res));
     }
-
+/*
     public function ResetPort($request, $response, $args)
     {
         $user = $this->user;
@@ -417,7 +426,7 @@ class UserController extends BaseController
         $res['msg'] = "设置成功，新端口是".$user->port;
         return $response->getBody()->write(json_encode($res));
     }
-
+*/
     public function GaReset($request, $response, $args)
     {
         $user = $this->user;
@@ -1598,7 +1607,7 @@ class UserController extends BaseController
         $newResponse = $response->withStatus(302)->withHeader('Location', '/auth/login');
         return $newResponse;
     }
-
+/*
     public function doCheckIn($request, $response, $args)
     {
         if (Config::get('enable_geetest_checkin') == 'true') {
@@ -1623,7 +1632,7 @@ class UserController extends BaseController
         $res['ret'] = 1;
         return $this->echoJson($response, $res);
     }
-
+*/
     public function kill($request, $response, $args)
     {
         return $this->view()->display('user/kill.tpl');
